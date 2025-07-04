@@ -35,82 +35,62 @@ export async function sendContactEmail(formData: FormData) {
       }
     }
 
-    console.log("📩 Contact form submission received:", { 
-      name, 
-      email, 
-      messageLength: message.length,
-      recipientEmail: "yaakai1516@gmail.com"
-    })
-    console.log("🔑 Attempting to send email with Resend API key:", resendApiKey?.substring(0, 10) + "...")
-    console.log("🔑 Full API key (for debugging):", resendApiKey)
+    console.log("📩 Sending email to: yaakai1516@gmail.com")
+    console.log("🔑 Using API key:", resendApiKey?.substring(0, 10) + "...")
 
     // Send email to your verified email address
     const { data, error } = await resend.emails.send({
-      from: "onboarding@resend.dev", // Simplified sender address
-      to: "yaakai1516@gmail.com", // Your company email (string instead of array)
-      subject: `New Contact Form Message from ${name}`,
+      from: "Yaakai Contact <onboarding@resend.dev>", // Add sender name for better deliverability
+      to: "yaakai1516@gmail.com", // Your verified email
+      subject: `[Yaakai] Contact Form: ${name}`, // Add prefix to make it more recognizable
       replyTo: email, // Set reply-to as the visitor's email
-      headers: {
-        'X-Entity-Ref-ID': new Date().getTime().toString(),
-      },
       html: `
-        <h2>New Contact Form Submission</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message}</p>
-        <hr>
-        <p>Sent from Yaakai website contact form</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h1 style="color: #f59f0a; margin-bottom: 20px; border-bottom: 2px solid #f59f0a; padding-bottom: 10px;">New Contact Form Submission</h1>
+            <div style="margin-bottom: 20px;">
+              <p style="margin: 10px 0;"><strong style="color: #333;">Name:</strong> <span style="color: #666;">${name}</span></p>
+              <p style="margin: 10px 0;"><strong style="color: #333;">Email:</strong> <a href="mailto:${email}" style="color: #f59f0a; text-decoration: none;">${email}</a></p>
+              <p style="margin: 15px 0 10px 0;"><strong style="color: #333;">Message:</strong></p>
+              <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #f59f0a; border-radius: 5px; margin: 10px 0;">
+                ${message.replace(/\n/g, "<br>")}
+              </div>
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="color: #999; font-size: 12px; margin: 0;">
+              Sent from Yaakai website contact form on ${new Date().toLocaleString()}
+            </p>
+            <p style="color: #999; font-size: 12px; margin: 5px 0 0 0;">
+              Reply directly to this email to respond to ${name}
+            </p>
+          </div>
+        </div>
       `,
     })
 
     if (error) {
       console.error("❌ Error sending contact email:", error)
-      console.error("❌ Full error details:", JSON.stringify(error, null, 2))
       
-      // Provide more specific error messages based on error type
-      if (error.name === 'validation_error') {
+      // Check if it's a recipient verification issue
+      if (error.message && (error.message.includes('not verified') || error.message.includes('not found'))) {
+        console.error("🚨 RECIPIENT EMAIL NOT VERIFIED IN RESEND")
+        console.error("📋 TO FIX: Go to https://resend.com/emails and verify yaakai1516@gmail.com")
+        
         return {
           success: false,
-          message: "Email service configuration error. Please contact support.",
+          message: "Email delivery issue: The recipient email needs to be verified in Resend. Please contact support directly at yaakai1516@gmail.com.",
         }
       }
       
       return {
         success: false,
-        message: "Failed to send message. Please try again or contact us directly at yaakai1516@gmail.com.",
-      }
-    }
+        message: "Failed to send message. Please try again.",
+      }    }
 
     console.log("✅ Email sent successfully:", data)
     console.log("📧 Email ID:", data?.id)
     console.log("📬 Sent to: yaakai1516@gmail.com")
-    console.log("🔔 Subject: New Contact Form Message from", name)
-    
-    // Also try to send a test email directly using fetch as backup
-    try {
-      const backupEmailResponse = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'onboarding@resend.dev',
-          to: 'yaakai1516@gmail.com',
-          subject: `BACKUP: Contact from ${name}`,
-          html: `<p>Name: ${name}</p><p>Email: ${email}</p><p>Message: ${message}</p>`,
-        }),
-      });
-      
-      if (backupEmailResponse.ok) {
-        const backupData = await backupEmailResponse.json();
-        console.log("🔄 Backup email also sent:", backupData.id);
-      }
-    } catch (backupError) {
-      console.log("⚠️ Backup email failed:", backupError);
-    }
-    
+
     return {
       success: true,
       message: "Message sent successfully! We will get back to you soon.",

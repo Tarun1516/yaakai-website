@@ -80,7 +80,18 @@ export default function LoginDialog({ open, onOpenChange, onSignUpClick, onForgo
       setPassword("")
     } catch (error: any) {
       console.error("LoginDialog - Error in handleLogin:", error)
-      setLocalError(error.message || "Failed to log in. Please try again.")
+      
+      // Check if it's a "user not found" error
+      if (error.message?.includes("No account found with this email address")) {
+        setLocalError("No account found. Would you like to sign up instead?")
+        // Optionally auto-switch to signup after a delay
+        setTimeout(() => {
+          onOpenChange(false)
+          onSignUpClick()
+        }, 2000)
+      } else {
+        setLocalError(error.message || "Failed to log in. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -132,6 +143,22 @@ export default function LoginDialog({ open, onOpenChange, onSignUpClick, onForgo
         {localError && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{localError}</AlertDescription>
+            {localError.includes("No account found") && (
+              <div className="mt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onOpenChange(false)
+                    onSignUpClick()
+                  }}
+                  className="text-xs"
+                >
+                  Sign Up Instead
+                </Button>
+              </div>
+            )}
           </Alert>
         )}
         <form onSubmit={handleLogin} className="space-y-4">

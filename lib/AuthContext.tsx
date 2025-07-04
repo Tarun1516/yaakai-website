@@ -15,6 +15,7 @@ import {
   sendPasswordResetEmail,
   verifyPasswordResetCode,
   confirmPasswordReset,
+  changeUserPassword,
 } from "@/lib/firebase-service"
 
 type User = {
@@ -40,6 +41,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>
   verifyResetCode: (code: string) => Promise<boolean>
   confirmReset: (code: string, newPassword: string) => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   error: string | null
   clearError: () => void
 }
@@ -59,6 +61,7 @@ const AuthContext = createContext<AuthContextType>({
   resetPassword: async () => {},
   verifyResetCode: async () => false,
   confirmReset: async () => {},
+  changePassword: async () => {},
   error: null,
   clearError: () => {},
 })
@@ -149,18 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Login successful")
     } catch (error: any) {
       console.error("Login error:", error)
-
-      // Create more user-friendly error messages
-      if (error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
-        setError("Invalid email or password. Please try again.")
-      } else if (error.code === "auth/user-disabled") {
-        setError("This account has been disabled. Please contact support.")
-      } else if (error.code === "auth/too-many-requests") {
-        setError("Too many failed login attempts. Please try again later.")
-      } else {
-        setError(error.message || "Failed to log in")
-      }
-
+      
+      // Use the error message from firebase-service directly
+      setError(error.message || "Failed to log in")
       throw error
     } finally {
       setIsLoading(false)
@@ -357,6 +351,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Change password
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      console.log("Changing user password")
+      await changeUserPassword(currentPassword, newPassword)
+      console.log("Password changed successfully")
+    } catch (error: any) {
+      console.error("Error changing password:", error)
+      setError(error.message || "Failed to change password")
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const clearError = () => setError(null)
 
   return (
@@ -375,6 +387,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         verifyResetCode,
         confirmReset,
+        changePassword,
         error,
         clearError,
       }}

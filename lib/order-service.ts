@@ -32,7 +32,7 @@ export interface RefundRequest {
 // const mockOrders: Record<string, Order> = {} // Removed mockOrders
 const mockRefundRequests: Record<string, RefundRequest> = {}
 
-// Custom ID generator to replace Appwrite's ID.unique()
+// Custom ID generator for unique IDs
 function generateUniqueId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }

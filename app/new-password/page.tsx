@@ -8,12 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, Eye, EyeOff, CheckCircle, X } from "lucide-react"
 import LogoSpinner from "@/components/LogoSpinner"
-import { supabase } from "@/lib/supabase"
 
 export default function NewPasswordPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const email = searchParams.get("email") || ""
+  const email = searchParams?.get("email") || ""
 
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -103,20 +102,13 @@ export default function NewPasswordPage() {
 
     try {
       // For demo purposes, we'll simulate a successful password change
-      // In a real app, you would properly update the password in Supabase
+      // In a real app, you would properly update the password
 
       // Simulate success after a short delay
       setTimeout(() => {
         setSuccess(true)
         setIsLoading(false)
       }, 1500)
-
-      // Try to sign out any existing session
-      try {
-        await supabase.auth.signOut()
-      } catch (logoutError) {
-        console.error("Error during logout:", logoutError)
-      }
     } catch (error: any) {
       setError(error.message || "Failed to change password")
       setIsLoading(false)

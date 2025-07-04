@@ -9,11 +9,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, Eye, EyeOff, CheckCircle, X } from "lucide-react"
 import LogoSpinner from "@/components/LogoSpinner"
 import { useAuth } from "@/lib/AuthContext"
-import { changePassword } from "@/lib/airtable-service"
 
 export default function ChangePasswordPage() {
   const router = useRouter()
-  const { user, logout } = useAuth()
+  const { user, logout, changePassword } = useAuth()
 
   const [currentPassword, setCurrentPassword] = useState("")
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -120,29 +119,15 @@ export default function ChangePasswordPage() {
     try {
       console.log("Attempting to change password for user:", user?.email)
 
-      // Actually change the password using the airtable function
-      const result = await changePassword(user?.email || "", currentPassword, password)
-
-      if (result) {
-        setSuccess(true)
-        setIsLoading(false)
-        // We don't automatically logout anymore - user must click the login button
-      } else {
-        setError("Failed to change password. Please check your current password and try again.")
-        setIsLoading(false)
-      }
+      // Use the real Firebase password change function
+      await changePassword(currentPassword, password)
+      
+      console.log("Password changed successfully!")
+      setSuccess(true)
     } catch (error: any) {
       console.error("Error changing password:", error)
-
-      // Provide more user-friendly error messages
-      if (error.message?.includes("Invalid login credentials")) {
-        setError("Current password is incorrect. Please try again.")
-      } else if (error.message?.includes("session missing")) {
-        setError("Your session has expired. Please log out and log in again before changing your password.")
-      } else {
-        setError("Failed to change password: " + (error.message || "Please try again."))
-      }
-
+      setError(error.message || "Failed to change password. Please try again.")
+    } finally {
       setIsLoading(false)
     }
   }
